@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"net"
+	"time"
 )
 
 
@@ -23,6 +24,8 @@ func connect_to_localhost() (string, error) {
 
 
 func broadcast_message(message string) {
+	fmt.Print("enter broadcast\n")
+	defer fmt.Print("leaving broadcast\n")
 	pc, err := net.ListenPacket("udp4", ":2010")
 	if err != nil {
 		panic(err)
@@ -41,9 +44,14 @@ func broadcast_message(message string) {
 }
 
 
-func run_contact_routine() {
-	body, err := connect_to_localhost()
-	if err == nil {
-		broadcast_message(body)
+func RunContactRoutine() {
+	for true {
+		fmt.Println("Contacting..")
+		body, err := connect_to_localhost()
+		if err == nil {
+			broadcast_message(body)
+		}
+		fmt.Println("Waiting..")
+		time.Sleep(time.Second * time.Duration(60))
 	}
 }

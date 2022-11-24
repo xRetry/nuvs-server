@@ -3,19 +3,22 @@ package listener
 import (
 	"net"
 	"time"
+	"fmt"
 )
 
 type Record struct {
-	ip string
-	header string
-	active_since time.Time
+	Ip string
+	Header string
+	ActiveSince time.Time
 }
 
 func newRecord(ip net.Addr, header []byte) Record {
 	return Record{ip.String(), string(header), time.Now()}
 }
 
-func listen_to_broadcast(record_chan chan map[string]Record) {
+func listen_to_broadcast() Record {
+	fmt.Print("enter listening\n")
+	defer fmt.Print("leaving listening\n")
 	pc,err := net.ListenPacket("udp4", ":2010")
 	if err != nil {
 		panic(err)
@@ -27,13 +30,19 @@ func listen_to_broadcast(record_chan chan map[string]Record) {
 	if err != nil {
 		panic(err)
 	}
+
+	return newRecord(addr, buf[:n])
+}
+
+func add_to_map(record_chan chan map[string]Record, record Record) {
 	record_map := <- record_chan	
-	record_map[addr.String()] = newRecord(addr, buf[:n])
+	record_map[record.Ip] = record
 	record_chan <- record_map
 }
 
-func run_listen_routine(record_chan chan map[string]Record) {
+func RunListenRoutine(record_chan chan map[string]Record) {
 	for true {
-		listen_to_broadcast(record_chan)
+		record := listen_to_broadcast()
+		add_to_map(record_chan, record)
 	}
 }
