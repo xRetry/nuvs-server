@@ -3,7 +3,7 @@ package response
 import (
     "fmt"
     "net/http"
-	"github.com/xRetry/nuvs-server/internal/listener"
+	"github.com/xRetry/nuvs-server/internal/udp-service"
 	"encoding/json"
 	"time"
 )
@@ -14,7 +14,7 @@ type DiffRecord struct {
 	Diff int `json:"valid"`
 }
 
-func active_services_response(w http.ResponseWriter, req *http.Request, record_chan chan map[string]listener.Record) {
+func active_services_response(w http.ResponseWriter, req *http.Request, record_chan chan map[string]udp_service.Record) {
 	record_map := <- record_chan
 
 	fmt.Fprintf(w, "[\n")
@@ -42,7 +42,7 @@ func active_services_response(w http.ResponseWriter, req *http.Request, record_c
 }
 
 
-func RunResponseRoutine(record_chan chan map[string]listener.Record) {
+func RunResponseRoutine(record_chan chan map[string]udp_service.Record) {
 
     http.HandleFunc("/api/v1.0/active-http-services", 
 		func(w http.ResponseWriter, req *http.Request) {
