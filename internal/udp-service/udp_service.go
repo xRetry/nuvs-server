@@ -35,8 +35,8 @@ func connect_to_localhost() (string, error) {
 }
 
 func broadcast_message(message string) {
-	fmt.Print("enter broadcast\n")
-	defer fmt.Print("leaving broadcast\n")
+	//fmt.Print("enter broadcast\n")
+	//defer fmt.Print("leaving broadcast\n")
 	pc, err := net.ListenPacket("udp4", ":2010")
 	if err != nil {
 		panic(err)
@@ -55,7 +55,7 @@ func broadcast_message(message string) {
 }
 
 func listen_to_broadcast(record_chan chan map[string]Record) {
-	fmt.Print("enter listening\n")
+	//fmt.Print("enter listening\n")
 
 	pc,err := net.ListenPacket("udp4", ":2010")
 	if err != nil {
@@ -74,11 +74,11 @@ func listen_to_broadcast(record_chan chan map[string]Record) {
 			break
 		}
 
-		fmt.Print("adding to map\n")
+		//fmt.Print("adding to map\n")
 		go add_to_map(record_chan, newRecord(addr, buf[:n]))
 	}
 
-	fmt.Print("leaving listening\n")
+	//fmt.Print("leaving listening\n")
 }
 
 func add_to_map(record_chan chan map[string]Record, record Record) {
