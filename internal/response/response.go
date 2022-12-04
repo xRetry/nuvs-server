@@ -31,7 +31,7 @@ func active_services_response(w http.ResponseWriter, req *http.Request, record_c
 		}
 		fmt.Fprintf(w, "\t")
 		fmt.Fprintf(w, string(b)+"")
-		if num_records > 1 { fmt.Fprintf(w, ",") }
+		if num_records > 2 { fmt.Fprintf(w, ",") }
 		fmt.Fprintf(w, "\n")
 
 		num_records -= 1
