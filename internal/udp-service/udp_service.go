@@ -43,7 +43,7 @@ func broadcast_message(message string) {
 	}
 	defer pc.Close()
 
-	addr,err := net.ResolveUDPAddr("udp4", "10.21.255.255:2010")
+	addr,err := net.ResolveUDPAddr("udp4", "10.21.0.255:2010")
 	if err != nil {
 		panic(err)
 	}

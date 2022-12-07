@@ -18,10 +18,13 @@ func active_services_response(w http.ResponseWriter, req *http.Request, record_c
 	record_map := <- record_chan
 
 	fmt.Fprintf(w, "[\n")
-	num_records := len(record_map)
+	num_valid := 0
 	for _, record := range record_map {
 		seconds := time.Now().Sub(record.ActiveSince).Seconds()
 		if seconds > 60 { continue } 
+		
+		if num_valid > 0 { fmt.Fprintf(w, ",\n") }
+		num_valid += 1
 
 		diff_record := DiffRecord{record.Ip, record.Header, int(seconds)}
 
@@ -31,12 +34,9 @@ func active_services_response(w http.ResponseWriter, req *http.Request, record_c
 		}
 		fmt.Fprintf(w, "\t")
 		fmt.Fprintf(w, string(b)+"")
-		if num_records > 2 { fmt.Fprintf(w, ",") }
-		fmt.Fprintf(w, "\n")
 
-		num_records -= 1
 	}
-	fmt.Fprintf(w, "]")
+	fmt.Fprintf(w, "\n]")
 
 	record_chan <- record_map
 }
