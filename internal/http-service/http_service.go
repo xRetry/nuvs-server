@@ -1,4 +1,4 @@
-package response
+package http_service
 
 import (
     "fmt"
@@ -8,18 +8,21 @@ import (
 	"time"
 )
 
+
 type DiffRecord struct {
 	Ip string `json:"ip"`
 	Header string `json:"header"`
 	Diff int `json:"valid"`
 }
 
-func active_services_response(w http.ResponseWriter, req *http.Request, record_chan chan map[string]udp_service.Record) {
-	record_map := <- record_chan
+
+func serve_json(w http.ResponseWriter, req *http.Request) {
+
+	udp_service.RecordsMtx.RLock()
 
 	fmt.Fprintf(w, "[\n")
 	num_valid := 0
-	for _, record := range record_map {
+	for _, record := range udp_service.Records {
 		seconds := time.Now().Sub(record.ActiveSince).Seconds()
 		if seconds > 60 { continue } 
 		
@@ -38,15 +41,15 @@ func active_services_response(w http.ResponseWriter, req *http.Request, record_c
 	}
 	fmt.Fprintf(w, "\n]")
 
-	record_chan <- record_map
+	udp_service.RecordsMtx.RUnlock()
 }
 
 
-func RunResponseRoutine(record_chan chan map[string]udp_service.Record) {
+func RunHttpRoutine() {
 
     http.HandleFunc("/api/v1.0/active-http-services", 
 		func(w http.ResponseWriter, req *http.Request) {
-			active_services_response(w, req, record_chan)
+			go serve_json(w, req)
 	})
 
     http.ListenAndServe(":2020", nil)

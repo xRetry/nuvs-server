@@ -7,6 +7,7 @@ import (
 	"strings"
 	"net"
 	"time"
+	"sync"
 )
 
 
@@ -16,6 +17,8 @@ type Record struct {
 	ActiveSince time.Time
 }
 
+var RecordsMtx sync.RWMutex
+var Records map[string]Record
 
 func newRecord(ip net.Addr, header []byte) Record {
 	return Record{ip.String(), string(header), time.Now()}
@@ -54,7 +57,7 @@ func broadcast_message(message string) {
 	}
 }
 
-func listen_to_broadcast(record_chan chan map[string]Record) {
+func listen_to_broadcast() {
 	//fmt.Print("enter listening\n")
 
 	pc,err := net.ListenPacket("udp4", ":2010")
@@ -75,21 +78,21 @@ func listen_to_broadcast(record_chan chan map[string]Record) {
 		}
 
 		//fmt.Print("adding to map\n")
-		go add_to_map(record_chan, newRecord(addr, buf[:n]))
+		go add_to_map(newRecord(addr, buf[:n]))
 	}
 
 	//fmt.Print("leaving listening\n")
 }
 
-func add_to_map(record_chan chan map[string]Record, record Record) {
-	record_map := <- record_chan	
-	record_map[record.Ip] = record
-	record_chan <- record_map
+func add_to_map(record Record) {
+	RecordsMtx.Lock()
+	Records[record.Ip] = record
+	RecordsMtx.Unlock()
 }
 
-func RunUdpService(record_chan chan map[string]Record) {
+func RunUdpService() {
 	for true {
-		listen_to_broadcast(record_chan)
+		listen_to_broadcast()
 		body, err := connect_to_localhost()
 		if err == nil {
 			broadcast_message(body)

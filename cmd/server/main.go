@@ -3,22 +3,18 @@ package main
 import (
 	"sync"
 	"github.com/xRetry/nuvs-server/internal/udp-service"
-	"github.com/xRetry/nuvs-server/internal/response"
+	"github.com/xRetry/nuvs-server/internal/http-service"
 )
 
-var waitGroup sync.WaitGroup
-
 func main() {
+	udp_service.Records = make(map[string]udp_service.Record) 
+	udp_service.RecordsMtx = sync.RWMutex{}
 
-	ch := make(chan map[string]udp_service.Record, 1)
-
-	m := make(map[string]udp_service.Record) 
-	ch <- m
-
+	waitGroup := sync.WaitGroup{}
 	waitGroup.Add(2)
 
-	go udp_service.RunUdpService(ch)
-	go response.RunResponseRoutine(ch)
+	go udp_service.RunUdpService()
+	go http_service.RunHttpRoutine()
 
 	waitGroup.Wait()
 
