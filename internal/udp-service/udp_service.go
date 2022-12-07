@@ -28,7 +28,6 @@ func newRecord(ip net.Addr, header []byte) Record {
 
 
 func checkLocalhost() (string, error) {
-	fmt.Println("checking")
 	resp, err := http.Get("http://127.0.0.1:2000/")
 	if err != nil {
 		return "", fmt.Errorf("Unable to connect to server")
