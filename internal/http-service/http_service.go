@@ -16,7 +16,7 @@ type DiffRecord struct {
 }
 
 
-func serve_json(w http.ResponseWriter, req *http.Request) {
+func serve_json(w http.ResponseWriter, req *http.Request, active bool) {
 
 	udp_service.RecordsMtx.RLock()
 
@@ -24,7 +24,8 @@ func serve_json(w http.ResponseWriter, req *http.Request) {
 	num_valid := 0
 	for _, record := range udp_service.Records {
 		seconds := time.Now().Sub(record.ActiveSince).Seconds()
-		if seconds > 60 { continue } 
+
+		if active && seconds > 60 { continue } 
 		
 		if num_valid > 0 { fmt.Fprintf(w, ",\n") }
 		num_valid += 1
@@ -49,7 +50,12 @@ func RunHttpRoutine() {
 
     http.HandleFunc("/api/v1.0/active-http-services", 
 		func(w http.ResponseWriter, req *http.Request) {
-			go serve_json(w, req)
+			serve_json(w, req, true)
+	})
+
+    http.HandleFunc("/api/v1.0/all-http-services", 
+		func(w http.ResponseWriter, req *http.Request) {
+			serve_json(w, req, false)
 	})
 
     http.ListenAndServe(":2020", nil)
