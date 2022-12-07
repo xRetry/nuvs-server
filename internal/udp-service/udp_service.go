@@ -11,21 +11,24 @@ import (
 )
 
 
+var RecordsMtx sync.RWMutex
+var Records map[string]Record
+
+
 type Record struct {
 	Ip string
 	Header string
 	ActiveSince time.Time
 }
 
-var RecordsMtx sync.RWMutex
-var Records map[string]Record
 
 func newRecord(ip net.Addr, header []byte) Record {
 	return Record{ip.String(), string(header), time.Now()}
 }
 
 
-func connect_to_localhost() (string, error) {
+func checkLocalhost() (string, error) {
+	fmt.Println("checking")
 	resp, err := http.Get("http://127.0.0.1:2000/")
 	if err != nil {
 		return "", fmt.Errorf("Unable to connect to server")
@@ -37,65 +40,63 @@ func connect_to_localhost() (string, error) {
 	return strings.Split(string(body), "\n")[0], nil
 }
 
-func broadcast_message(message string) {
-	//fmt.Print("enter broadcast\n")
-	//defer fmt.Print("leaving broadcast\n")
-	pc, err := net.ListenPacket("udp4", ":2010")
-	if err != nil {
-		panic(err)
-	}
-	defer pc.Close()
 
+func sendBroadcast(conn *net.PacketConn) {
 	addr,err := net.ResolveUDPAddr("udp4", "10.21.0.255:2010")
 	if err != nil {
 		panic(err)
 	}
 
-	_,err = pc.WriteTo([]byte(message), addr)
-	if err != nil {
-		panic(err)
+	for {
+		message, err := checkLocalhost()
+		if err == nil {
+			_,err = (*conn).WriteTo([]byte(message), addr)
+			fmt.Println("broadcasting")
+			if err != nil {
+				panic(err)
+			}
+		}
+
+		time.Sleep(time.Second * 60)
 	}
 }
 
-func listen_to_broadcast() {
-	//fmt.Print("enter listening\n")
 
-	pc,err := net.ListenPacket("udp4", ":2010")
-	if err != nil {
-		panic(err)
-	}
-	pc.SetReadDeadline(time.Now().Add(60 * time.Second))
-	defer pc.Close()
+func listenToBroadcast(conn *net.PacketConn) {
+	fmt.Println("enter listening")
 
 	for {
 		buf := make([]byte, 1024)
-		n,addr,err := pc.ReadFrom(buf)
+		n,addr,err := (*conn).ReadFrom(buf)
 		if err != nil {
-			if e, ok := err.(net.Error); !ok || !e.Timeout() {
-				panic(err)
-			}
-			break
+			panic(err)
 		}
 
-		//fmt.Print("adding to map\n")
-		go add_to_map(newRecord(addr, buf[:n]))
+		go addToMap(newRecord(addr, buf[:n]))
 	}
-
-	//fmt.Print("leaving listening\n")
 }
 
-func add_to_map(record Record) {
+
+func addToMap(record Record) {
 	RecordsMtx.Lock()
+	fmt.Println("adding to map")
 	Records[record.Ip] = record
 	RecordsMtx.Unlock()
 }
 
+
 func RunUdpService() {
-	for true {
-		listen_to_broadcast()
-		body, err := connect_to_localhost()
-		if err == nil {
-			broadcast_message(body)
-		}
+	conn, err := net.ListenPacket("udp4", ":2010")
+	if err != nil {
+		panic(err)
 	}
+	defer conn.Close()
+
+	waitGroup := sync.WaitGroup{}
+	waitGroup.Add(2)
+
+	go listenToBroadcast(&conn)
+	go sendBroadcast(&conn)
+
+	waitGroup.Wait()
 }
