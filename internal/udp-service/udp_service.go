@@ -28,7 +28,6 @@ func newRecord(ip net.Addr, header []byte) Record {
 
 
 func checkLocalhost() (string, error) {
-	fmt.Println("checking")
 	resp, err := http.Get("http://127.0.0.1:2000/")
 	if err != nil {
 		return "", fmt.Errorf("Unable to connect to server")
@@ -51,7 +50,6 @@ func sendBroadcast(conn *net.PacketConn) {
 		message, err := checkLocalhost()
 		if err == nil {
 			_,err = (*conn).WriteTo([]byte(message), addr)
-			fmt.Println("broadcasting")
 			if err != nil {
 				panic(err)
 			}
@@ -63,7 +61,6 @@ func sendBroadcast(conn *net.PacketConn) {
 
 
 func listenToBroadcast(conn *net.PacketConn) {
-	fmt.Println("enter listening")
 
 	for {
 		buf := make([]byte, 1024)
@@ -79,7 +76,6 @@ func listenToBroadcast(conn *net.PacketConn) {
 
 func addToMap(record Record) {
 	RecordsMtx.Lock()
-	fmt.Println("adding to map")
 	Records[record.Ip] = record
 	RecordsMtx.Unlock()
 }
