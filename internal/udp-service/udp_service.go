@@ -42,7 +42,7 @@ func checkLocalhost() (string, error) {
 
 
 func sendBroadcast(conn *net.PacketConn) {
-	addr,err := net.ResolveUDPAddr("udp4", "10.21.0.255:2010")
+	addr,err := net.ResolveUDPAddr("udp4", "10.21.255.255:2010")
 	if err != nil {
 		panic(err)
 	}
